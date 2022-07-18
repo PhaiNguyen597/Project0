@@ -20,4 +20,6 @@ class User:
         self.balance += time * 8
 
     def str(self):
-        return f"User: {self.username}  Wallet: {self.wallet}  Balance: {self.balance}"
+        return (
+            f"User: {self.username}  Wallet: ${self.wallet}  Balance: ${self.balance}"
+        )

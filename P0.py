@@ -17,6 +17,7 @@ def main():
     commands = [
         "/help",
         "/balance",
+        "/wallet",
         "/pay",
         "/withdraw",
         "/deposit",
@@ -34,7 +35,7 @@ def main():
     while run:
         time.sleep(0.1)
         command = ""
-        command = input("\nWhat would you like to do? >>> ")
+        command = input(f"\nWhat would you like to do, {curruser}? >>> ")
         for i in range(len(commands)):
             if command == commands[i]:
                 print()
@@ -42,34 +43,27 @@ def main():
                 run_command(currcommand)
                 break
             elif command != commands[i] and i == len(commands) - 1:
-                print("I'm sorry, that doesn't seem to be a valid command.")
+                print(
+                    "I'm sorry, that doesn't seem to be a valid command. Did you make sure to not type any spaces?"
+                )
 
 
 def read_data():
     global user_list
     user_list = []
-    try:
-        file = open("data.csv", "r")
-    except OSError:
-        file = open("data.csv", "w")
-        file.write("Guest, 0, 0")
-        file.close()
-        file = open("data.csv", "r")
-    for line in file:
-        str_list = line.split(",")
-        username = str_list[0]
-        wallet = str_list[1]
-        balance = str_list[2]
-        user = User(username, wallet, balance)
-        user_list.append(user)
+    # We have to make sure a file called data.csv exists, so a simple open and close would do the trick.
+    file = open("data.csv", "a")
     file.close()
-
-
-def delete_empty_lines():
-    with open("data.csv", "w") as file:
-        for line in file:
-            if not line.isspace():
-                file.writelines(line)
+    file = open("data.csv", "r")
+    for line in file:
+        if not line.isspace():
+            str_list = line.split(",")
+            username = str_list[0]
+            wallet = str_list[1]
+            balance = str_list[2]
+            user = User(username, wallet, balance)
+            user_list.append(user)
+    file.close()
 
 
 def get_curr_user(username):
@@ -99,7 +93,6 @@ def change_data(user):
     file.close()
     file = open("data.csv", "a")
     file.write(f"{user.username}, {user.wallet}, {user.balance}\n")
-    print(f"Changing data of {user.username}")
     file.close()
 
 
@@ -111,15 +104,22 @@ def check_login():
         return True
 
 
+def contains_comma(word):
+    for i in range(len(word)):
+        if word[i] == ",":
+            return True
+    return False
+
+
 def run_command(command):
     global curruser
     global user_list
-    # delete_empty_lines()
     try:
 
         if command == "/help":
             print("/help - Displays the various commands available to use.")
             print("/balance - Check the current user's balance")
+            print("/wallet - Check the current user's wallet")
             print(
                 "/pay - Transfers money from your account to another registered user's"
             )
@@ -131,7 +131,7 @@ def run_command(command):
             )
             print("/login - Logs in to a created user")
             print("/display - Displays information of current user")
-            print("displayall - Displays the information of all users")
+            print("/displayall - Displays the information of all users")
             print("/logout - Logs out of current user")
             print("/register - Creates a new user with a specified name")
             print("/work - Work a specified amount of hours for money.")
@@ -140,25 +140,37 @@ def run_command(command):
         elif command == "/balance":
             if check_login() == True:
                 user = get_curr_user(curruser)
-                print("Bank balance: ", user.balance)
+                print(f"Bank balance: ${user.balance}")
+            else:
+                print("Not logged in!")
+
+        elif command == "/wallet":
+            if check_login() == True:
+                user = get_curr_user(curruser)
+                print(f"Wallet: ${user.wallet}")
             else:
                 print("Not logged in!")
 
         elif command == "/pay":
-            target = input("Enter the username whom you wish to send money to: >>>")
-            if check_existing_user(target) == False:
-                print("That user does not exist!")
-            else:
-                amount = int(input("Enter how much money you would like to send: >>>"))
-                user = get_curr_user(curruser)
-                target_user = get_curr_user(target)
-                if amount <= user.balance:
-                    user.pay(amount, target_user)
-                    print(f"Successfully paid {amount} to {target}")
-                    change_data(user)
-                    change_data(target_user)
+            if check_login() == True:
+                target = input("Enter the username whom you wish to send money to: >>>")
+                if check_existing_user(target) == False:
+                    print("That user does not exist!")
                 else:
-                    print("Amount exceeds balance.")
+                    amount = int(
+                        input("Enter how much money you would like to send: >>>")
+                    )
+                    user = get_curr_user(curruser)
+                    target_user = get_curr_user(target)
+                    if amount <= user.balance:
+                        user.pay(amount, target_user)
+                        print(f"Successfully paid ${amount} to {target}")
+                        change_data(user)
+                        change_data(target_user)
+                    else:
+                        print("Amount exceeds balance.")
+            else:
+                print("You are not logged in!")
 
         elif command == "/withdraw":
             if check_login() == True:
@@ -168,7 +180,7 @@ def run_command(command):
                     print("Amount exceeds balance")
                 else:
                     user.withdraw(amount)
-                    print(f"Sucessfully withdrew {amount}")
+                    print(f"Sucessfully withdrew ${amount}")
                     change_data(user)
             else:
                 print("Not logged in!")
@@ -181,7 +193,7 @@ def run_command(command):
                     print("Amount exceeds wallet!")
                 else:
                     user.deposit(amount)
-                    print(f"Sucessfully deposited {amount}")
+                    print(f"Sucessfully deposited ${amount}")
                     change_data(user)
             else:
                 print("Not logged in!")
@@ -221,23 +233,28 @@ def run_command(command):
             while registering:
 
                 username = input("Please enter desired username: >>>")
-                if check_existing_user(username) == False:
+                if (
+                    check_existing_user(username) == False
+                    and contains_comma(username) == False
+                ):
                     user = User(username, 500, 0)
                     user_list.append(user)
                     with open("data.csv", "a") as file:
                         file.write(f"\n{username}, 500, 0")
                     print("User created sucessfully!")
-                    curruser = user
+                    curruser = user.username
                     registering = False
                 else:
-                    print("User already exists. Please try another username")
+                    print(
+                        "User already exists or name is unavailable. Please try another username"
+                    )
 
         elif command == "/work":
             if check_login() == False:
                 print("You're not logged in!")
             else:
                 user = get_curr_user(curruser)
-                hours = int(input("How many hours would you like to work?"))
+                hours = int(input("How many hours would you like to work? >>>"))
                 if hours > 8:
                     print(
                         "You can't work that much! Your boss does not like to pay overtime!"
@@ -251,7 +268,7 @@ def run_command(command):
                     income = hours * 8
                     user.work(hours)
                     print(
-                        f"*{user.username} worked for {hours} at $8.00 and hour and gained ${income}*"
+                        f"*{user.username} worked for {hours} hours at $8 an hour and gained ${income}*"
                     )
                     change_data(user)
 
@@ -263,6 +280,10 @@ def run_command(command):
     except AttributeError:
         print(
             "OOPS! Something went wrong. Maybe try logging out and logging back in? \nReturning to main page..."
+        )
+    except ValueError:
+        print(
+            "ERROR: Make sure you type int in int field and string in string field!\n Returning to main page..."
         )
 
 
