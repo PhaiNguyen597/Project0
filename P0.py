@@ -1,8 +1,13 @@
 import time
-import json
-import os
 from P0_User import User
-import fileinput
+from P0_helper_methods import (
+    count_spaces,
+    command_base,
+    separate_args,
+    remove_space,
+    change_data,
+    contains_comma,
+)
 
 global run
 global curruser
@@ -36,18 +41,37 @@ def main():
         time.sleep(0.1)
         command = ""
         command = input(f"\nWhat would you like to do, {curruser}? >>> ")
-        for i in range(len(commands)):
-            if command == commands[i]:
-                print()
-                currcommand = commands[i]
-                run_command(currcommand)
-                break
-            elif command != commands[i] and i == len(commands) - 1:
-                print(
-                    "I'm sorry, that doesn't seem to be a valid command. Did you make sure to not type any spaces?"
-                )
+        print()
+        if (
+            command_base(command) == "/login"
+            or command_base(command) == "/withdraw"
+            or command_base(command) == "/deposit"
+            or command_base(command) == "/register"
+            or command_base(command) == "/work"
+        ) and len(separate_args(command)) == 2:
+            currcommand = separate_args(command)[0]
+            arg1 = separate_args(command)[1]
+            run_command(currcommand, arg1, 0)
+        elif command[0:4] == "/pay" and len(separate_args(command)) == 3:
+            currcommand = separate_args(command)[0]
+            arg1 = separate_args(command)[1]
+            arg2 = int(separate_args(command)[2])
+            run_command(currcommand, arg1, arg2)
+        else:
+            currcommand = remove_space(command)
+            run_command(currcommand, 0, 0)
 
 
+# Function to see if the user is logged in. By default, the username is Guest, so when name = Guest, user is not logged in.
+def check_login():
+    global curruser
+    if curruser == "Guest":
+        return False
+    else:
+        return True
+
+
+# Function to convert all the data in the data.csv file into User objects that we can interact with.
 def read_data():
     global user_list
     user_list = []
@@ -66,12 +90,14 @@ def read_data():
     file.close()
 
 
+# Function to convert the current logged in user STRING into an object in the csv with the same username.
 def get_curr_user(username):
     for i in range(len(user_list)):
         if username == user_list[i].username:
             return user_list[i]
 
 
+# Function for registering that checks if the name inputted is unique.
 def check_existing_user(username):
     global user_list
     users = user_list
@@ -81,37 +107,8 @@ def check_existing_user(username):
     return False
 
 
-def change_data(user):
-    file = open("data.csv", "r")
-    lines = file.readlines()
-    file.close()
-    file = open("data.csv", "w")
-    for line in lines:
-        data = line.split(",")
-        if user.username != data[0]:
-            file.write(line)
-    file.close()
-    file = open("data.csv", "a")
-    file.write(f"{user.username}, {user.wallet}, {user.balance}\n")
-    file.close()
-
-
-def check_login():
-    global curruser
-    if curruser == "Guest":
-        return False
-    else:
-        return True
-
-
-def contains_comma(word):
-    for i in range(len(word)):
-        if word[i] == ",":
-            return True
-    return False
-
-
-def run_command(command):
+# Big function to run the command user inputs.
+def run_command(command, arg1, arg2):
     global curruser
     global user_list
     try:
@@ -121,20 +118,24 @@ def run_command(command):
             print("/balance - Check the current user's balance")
             print("/wallet - Check the current user's wallet")
             print(
-                "/pay - Transfers money from your account to another registered user's"
+                "/pay or /pay [user] [amount] - Transfers money from your account to another registered user's"
             )
             print(
-                "/withdraw - Withdraws money from the bank account and puts it into the current user"
+                "/withdraw or /withdraw [amount] - Withdraws money from the bank account and puts it into the current user"
             )
             print(
-                "/deposit - Transfers money from the wallet to the current account's bank balance"
+                "/deposit or /deposit [amount] - Transfers money from the wallet to the current account's bank balance"
             )
-            print("/login - Logs in to a created user")
+            print("/login or /login [username] - Logs in to a created user")
             print("/display - Displays information of current user")
             print("/displayall - Displays the information of all users")
             print("/logout - Logs out of current user")
-            print("/register - Creates a new user with a specified name")
-            print("/work - Work a specified amount of hours for money.")
+            print(
+                "/register or /register [name] - Creates a new user with a specified name"
+            )
+            print(
+                "/work or /work [hours] - Work a specified amount of hours for money."
+            )
             print("/exit - Closes the program")
 
         elif command == "/balance":
@@ -151,50 +152,84 @@ def run_command(command):
             else:
                 print("Not logged in!")
 
-        elif command == "/pay":
+        elif command[0:4] == "/pay":
             if check_login() == True:
-                target = input("Enter the username whom you wish to send money to: >>>")
-                if check_existing_user(target) == False:
-                    print("That user does not exist!")
-                else:
-                    amount = int(
-                        input("Enter how much money you would like to send: >>>")
-                    )
+                if arg1 != 0 and arg2 != 0:
                     user = get_curr_user(curruser)
-                    target_user = get_curr_user(target)
-                    if amount <= user.balance:
-                        user.pay(amount, target_user)
-                        print(f"Successfully paid ${amount} to {target}")
-                        change_data(user)
-                        change_data(target_user)
+                    if check_existing_user(arg1) == False:
+                        print("That user does not exist!")
                     else:
-                        print("Amount exceeds balance.")
+                        if arg2 <= user.balance:
+                            target_user = get_curr_user(arg1)
+                            user.pay(arg2, target_user)
+                            print(f"Sucessfully paid ${arg2} to {arg1}")
+                            change_data(user)
+                            change_data(target_user)
+                        else:
+                            print("Amount exceeds balance")
+                else:
+                    target = input(
+                        "Enter the username whom you wish to send money to: >>>"
+                    )
+                    if check_existing_user(target) == False:
+                        print("That user does not exist!")
+                    else:
+                        amount = int(
+                            input("Enter how much money you would like to send: >>>")
+                        )
+                        user = get_curr_user(curruser)
+                        target_user = get_curr_user(target)
+                        if amount <= user.balance:
+                            user.pay(amount, target_user)
+                            print(f"Successfully paid ${amount} to {target}")
+                            change_data(user)
+                            change_data(target_user)
+                        else:
+                            print("Amount exceeds balance.")
             else:
                 print("You are not logged in!")
 
         elif command == "/withdraw":
             if check_login() == True:
-                amount = int(input("Enter the amount you wish to withdraw: >>>"))
                 user = get_curr_user(curruser)
-                if amount > user.balance:
-                    print("Amount exceeds balance")
+                if arg1 != 0:
+                    amount = int(arg1)
+                    if amount > user.balance:
+                        print("Amount exceeds balance")
+                    else:
+                        user.withdraw(amount)
+                        print(f"Sucessfully witthdrew ${amount}")
+                        change_data(user)
                 else:
-                    user.withdraw(amount)
-                    print(f"Sucessfully withdrew ${amount}")
-                    change_data(user)
+                    amount = int(input("Enter the amount you wish to withdraw: >>>"))
+                    if amount > user.balance:
+                        print("Amount exceeds balance")
+                    else:
+                        user.withdraw(amount)
+                        print(f"Sucessfully withdrew ${amount}")
+                        change_data(user)
             else:
                 print("Not logged in!")
 
         elif command == "/deposit":
             if check_login() == True:
-                amount = int(input("Enter the amount you wish to deposit: >>>"))
                 user = get_curr_user(curruser)
-                if amount > user.wallet:
-                    print("Amount exceeds wallet!")
+                if arg1 != 0:
+                    amount = int(arg1)
+                    if amount > user.wallet:
+                        print("Amount exceeds wallet!")
+                    else:
+                        user.deposit(amount)
+                        print(f"Sucessfully deposited ${amount}")
+                        change_data(user)
                 else:
-                    user.deposit(amount)
-                    print(f"Sucessfully deposited ${amount}")
-                    change_data(user)
+                    amount = int(input("Enter the amount you wish to deposit: >>>"))
+                    if amount > user.wallet:
+                        print("Amount exceeds wallet!")
+                    else:
+                        user.deposit(amount)
+                        print(f"Sucessfully deposited ${amount}")
+                        change_data(user)
             else:
                 print("Not logged in!")
 
@@ -202,12 +237,19 @@ def run_command(command):
             if check_login() == True:
                 print("Already logged in!")
             else:
-                username = input("Enter the username: >>>")
-                if check_existing_user(username):
-                    curruser = username
-                    print("Logged in sucessfully!")
+                if arg1 != 0:
+                    if check_existing_user(arg1):
+                        curruser = arg1
+                        print("Logged in sucessfully!")
+                    else:
+                        print("This user does not exist. Did you mean /register?")
                 else:
-                    print("This user does not exist. Did you mean /register? ")
+                    username = input("Enter the username: >>>")
+                    if check_existing_user(username):
+                        curruser = username
+                        print("Logged in sucessfully!")
+                    else:
+                        print("This user does not exist. Did you mean /register? ")
 
         elif command == "/display":
             if check_login() == False:
@@ -232,7 +274,10 @@ def run_command(command):
             registering = True
             while registering:
 
-                username = input("Please enter desired username: >>>")
+                if arg1 == 0:
+                    username = input("Please enter desired username: >>>")
+                else:
+                    username = arg1
                 if (
                     check_existing_user(username) == False
                     and contains_comma(username) == False
@@ -244,17 +289,31 @@ def run_command(command):
                     print("User created sucessfully!")
                     curruser = user.username
                     registering = False
-                else:
+                elif (
+                    check_existing_user(username) == True
+                    or contains_comma(username) == True
+                ) and arg1 == 0:
                     print(
                         "User already exists or name is unavailable. Please try another username"
                     )
+                elif (
+                    check_existing_user(username) == True
+                    or contains_comma(username) == True
+                ) and arg1 != 0:
+                    print(
+                        "User already exists or name is unavailable. Please try another username"
+                    )
+                    registering = False
 
         elif command == "/work":
             if check_login() == False:
                 print("You're not logged in!")
             else:
                 user = get_curr_user(curruser)
-                hours = int(input("How many hours would you like to work? >>>"))
+                if arg1 == 0:
+                    hours = int(input("How many hours would you like to work? >>>"))
+                else:
+                    hours = int(arg1)
                 if hours > 8:
                     print(
                         "You can't work that much! Your boss does not like to pay overtime!"
@@ -276,6 +335,11 @@ def run_command(command):
             print("The program will now terminate")
             global run
             run = False
+
+        else:
+            print(
+                "I'm sorry, that doesn't seem to be a valid command. Type /help for a list of commands along with proper usage."
+            )
 
     except AttributeError:
         print(
