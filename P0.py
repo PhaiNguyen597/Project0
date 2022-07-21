@@ -18,10 +18,7 @@ curruser = "Guest"
 
 def main():
     global user_list
-    try:
-        read_data()
-    except ValueError:
-        print("One or more accounts are corrupted! Some will not read to data.")
+    read_data()
     # Commands:
     # "/help",
     # "/balance",
@@ -81,14 +78,18 @@ def read_data():
     file = open("data.csv", "a")
     file.close()
     file = open("data.csv", "r")
+    # Sometimes when we create new users, the code likes to put a space between, and that space normally breaks the program. To get around that, we add a check to make sure it's not reading an empty line.
     for line in file:
         if not line.isspace():
-            str_list = line.split(",")
-            username = str_list[0]
-            wallet = str_list[1]
-            balance = str_list[2]
-            user = User(username, wallet, balance)
-            user_list.append(user)
+            try:
+                str_list = line.split(",")
+                username = str_list[0]
+                wallet = str_list[1]
+                balance = str_list[2]
+                user = User(username, wallet, balance)
+                user_list.append(user)
+            except ValueError:
+                print("ERROR: Invalid account detected in CSV")
     file.close()
 
 
