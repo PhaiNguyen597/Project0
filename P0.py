@@ -18,7 +18,12 @@ curruser = "Guest"
 
 def main():
     global user_list
-    read_data()
+    try:
+        read_data()
+    except ValueError:
+        print(
+            "Oops! It looks like the file is corrupted. Delete the file and rerun the program to continue."
+        )
     commands = [
         "/help",
         "/balance",
