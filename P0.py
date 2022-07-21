@@ -19,21 +19,20 @@ curruser = "Guest"
 def main():
     global user_list
     read_data()
-    commands = [
-        "/help",
-        "/balance",
-        "/wallet",
-        "/pay",
-        "/withdraw",
-        "/deposit",
-        "/login",
-        "/display",
-        "/displayall",
-        "/logout",
-        "/register",
-        "/work",
-        "/exit",
-    ]
+    # Commands:
+    # "/help",
+    # "/balance",
+    # "/wallet",
+    # "/pay",
+    # "/withdraw",
+    # "/deposit",
+    # "/login",
+    # "/display",
+    # "/displayall",
+    # "/logout",
+    # "/register",
+    # "/work",
+    # "/exit",
     print(
         "Welcome to the not very secure banking app. For a list of commands, please type /help."
     )
