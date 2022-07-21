@@ -34,7 +34,7 @@ def main():
     # "/work",
     # "/exit",
     print(
-        "Welcome to the not very secure banking app. For a list of commands, please type /help."
+        "\n\n\nWelcome to the not very secure banking app. For a list of commands, please type /help."
     )
     while run:
         time.sleep(0.1)
