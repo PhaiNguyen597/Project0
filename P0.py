@@ -21,24 +21,21 @@ def main():
     try:
         read_data()
     except ValueError:
-        print(
-            "Oops! It looks like the file is corrupted. Delete the file and rerun the program to continue."
-        )
-    commands = [
-        "/help",
-        "/balance",
-        "/wallet",
-        "/pay",
-        "/withdraw",
-        "/deposit",
-        "/login",
-        "/display",
-        "/displayall",
-        "/logout",
-        "/register",
-        "/work",
-        "/exit",
-    ]
+        print("One or more accounts are corrupted! Some will not read to data.")
+    # Commands:
+    # "/help",
+    # "/balance",
+    # "/wallet",
+    # "/pay",
+    # "/withdraw",
+    # "/deposit",
+    # "/login",
+    # "/display",
+    # "/displayall",
+    # "/logout",
+    # "/register",
+    # "/work",
+    # "/exit",
     print(
         "Welcome to the not very secure banking app. For a list of commands, please type /help."
     )
