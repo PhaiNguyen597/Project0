@@ -284,6 +284,7 @@ def run_command(command, arg1, arg2):
                 if (
                     check_existing_user(username) == False
                     and contains_comma(username) == False
+                    and count_spaces(username) == 0
                 ):
                     user = User(username, 500, 0)
                     user_list.append(user)
@@ -295,9 +296,10 @@ def run_command(command, arg1, arg2):
                 elif (
                     check_existing_user(username) == True
                     or contains_comma(username) == True
+                    or count_spaces(username) >= 1
                 ) and arg1 == 0:
                     print(
-                        "User already exists or name is unavailable. Please try another username"
+                        "User already exists or name is unavailable. Please try another username\nMake sure your name does not have any commas or spaces."
                     )
                 elif (
                     check_existing_user(username) == True
